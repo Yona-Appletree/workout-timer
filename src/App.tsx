@@ -323,24 +323,15 @@ function App() {
           </div>
         </div>
 
-        {timerState === "resting" && (
-          <div className="text-center p-4 bg-blue-500/10 rounded-lg">
-            <Clock className="w-6 h-6 mx-auto mb-2 animate-pulse" />
-            <div className="text-xl font-bold">
-              Rest Time: {formatTime(currentRestTime)}
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-4">
+        <div className="space-y-2">
           {exercises.map((exercise, index) => (
             <div
               key={index}
               className={cn(
-                "grid grid-cols-[1fr,2fr,auto] gap-4 items-center",
+                "grid grid-cols-[1fr,2fr,auto] gap-4 items-center p-2",
                 currentExercise === index &&
                   timerState === "running" &&
-                  "bg-blue-500/10 p-4 rounded-lg"
+                  "bg-blue-500/10 rounded-lg"
               )}
             >
               <div>
@@ -362,7 +353,7 @@ function App() {
                   className="bg-white/5"
                 />
               </div>
-              <div className="space-y-4">
+              <div className="space-y-1">
                 <div className="relative">
                   <Progress value={exercise.leftProgress} className="h-6" />
                   <div className="absolute inset-0 flex justify-between items-center px-3">
@@ -394,11 +385,26 @@ function App() {
           ))}
         </div>
 
-        <div className="flex justify-between">
-          <Button onClick={addExercise} variant="outline" disabled={isRunning}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Exercise
-          </Button>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            {!isRunning && (
+              <Button
+                onClick={addExercise}
+                variant="outline"
+                disabled={isRunning}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Exercise
+              </Button>
+            )}
+
+            {timerState === "resting" && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                <span>Rest: {formatTime(currentRestTime)}</span>
+              </div>
+            )}
+          </div>
 
           <div className="space-x-2">
             {!isRunning ? (
