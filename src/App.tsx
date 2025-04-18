@@ -427,7 +427,7 @@ function App() {
       </Card>
       <div className="absolute bottom-4 right-4 text-white/50 font-['Dancing_Script']">
         <a href="https://www.photomancer.art" target="_blank">
-          Made with ❤️ by Yona
+          Made with ❤️ by Hypher
         </a>
       </div>
     </div>
