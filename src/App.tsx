@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
   Timer,
   Play,
@@ -12,8 +12,8 @@ import {
   Plus,
   Trash2,
   Clock,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Exercise {
   name: string;
@@ -21,28 +21,28 @@ interface Exercise {
   rightProgress: number;
 }
 
-type TimerState = "idle" | "running" | "completed" | "resting";
+type TimerState = 'idle' | 'running' | 'completed' | 'resting';
 
 // URL encoding/decoding functions
 const encodeState = (
   exercises: Exercise[],
   exerciseTime: number,
-  restTime: number
+  restTime: number,
 ) => {
   // Format: exerciseTime,restTime|exercise1Name|exercise2Name|...
   const exerciseNames = exercises
     .map((ex) => encodeURIComponent(ex.name))
-    .join("|");
+    .join('|');
   return `${exerciseTime},${restTime}|${exerciseNames}`;
 };
 
 const decodeState = (encoded: string) => {
   try {
-    const [times, ...exerciseNames] = encoded.split("|");
-    const [exerciseTime, restTime] = times.split(",").map(Number);
+    const [times, ...exerciseNames] = encoded.split('|');
+    const [exerciseTime, restTime] = times.split(',').map(Number);
 
     if (isNaN(exerciseTime) || isNaN(restTime)) {
-      throw new Error("Invalid time values");
+      throw new Error('Invalid time values');
     }
 
     const exercises = exerciseNames.map((name) => ({
@@ -58,17 +58,17 @@ const decodeState = (encoded: string) => {
 };
 
 // Local storage key
-const STORAGE_KEY = "workout-timer-state";
+const STORAGE_KEY = 'workout-timer-state';
 
 function App() {
   const [exercises, setExercises] = useState<Exercise[]>([
-    { name: "Exercise 1", leftProgress: 0, rightProgress: 0 },
+    { name: 'Exercise 1', leftProgress: 0, rightProgress: 0 },
   ]);
   const [exerciseTime, setExerciseTime] = useState(30);
   const [restTime, setRestTime] = useState(10);
   const [currentExercise, setCurrentExercise] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [timerState, setTimerState] = useState<TimerState>("idle");
+  const [timerState, setTimerState] = useState<TimerState>('idle');
   const [currentRestTime, setCurrentRestTime] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -80,34 +80,34 @@ function App() {
   // Initialize state from URL or local storage on mount
   useEffect(() => {
     const loadInitialState = () => {
-      console.log("Loading initial state...");
+      console.log('Loading initial state...');
       const params = new URLSearchParams(window.location.search);
-      const encodedState = params.get("state");
-      console.log("URL state:", encodedState);
+      const encodedState = params.get('state');
+      console.log('URL state:', encodedState);
 
       if (encodedState) {
         const decoded = decodeState(encodedState);
-        console.log("Decoded URL state:", decoded);
+        console.log('Decoded URL state:', decoded);
         if (decoded) {
           setExercises(decoded.exercises);
           setExerciseTime(decoded.exerciseTime);
           setRestTime(decoded.restTime);
-          console.log("Set state from URL");
+          console.log('Set state from URL');
           return;
         }
       }
 
       // Fallback to local storage if no valid URL state
       const storedState = localStorage.getItem(STORAGE_KEY);
-      console.log("Local storage state:", storedState);
+      console.log('Local storage state:', storedState);
       if (storedState) {
         const decoded = decodeState(storedState);
-        console.log("Decoded local storage state:", decoded);
+        console.log('Decoded local storage state:', decoded);
         if (decoded) {
           setExercises(decoded.exercises);
           setExerciseTime(decoded.exerciseTime);
           setRestTime(decoded.restTime);
-          console.log("Set state from local storage");
+          console.log('Set state from local storage');
         }
       }
     };
@@ -123,14 +123,14 @@ function App() {
     const encoded = encodeState(exercises, exerciseTime, restTime);
     // Update URL
     const newUrl = `${window.location.pathname}?state=${encoded}`;
-    window.history.replaceState({}, "", newUrl);
+    window.history.replaceState({}, '', newUrl);
     // Update local storage
     localStorage.setItem(STORAGE_KEY, encoded);
   }, [exercises, exerciseTime, restTime, isInitialLoad]);
 
   // Debug effect to log state changes
   useEffect(() => {
-    console.log("Current state:", {
+    console.log('Current state:', {
       exercises,
       exerciseTime,
       restTime,
@@ -142,7 +142,7 @@ function App() {
     setExercises([
       ...exercises,
       {
-        name: "Exercise " + (exercises.length + 1),
+        name: 'Exercise ' + (exercises.length + 1),
         leftProgress: 0,
         rightProgress: 0,
       },
@@ -164,7 +164,7 @@ function App() {
   const updateExercise = (
     index: number,
     field: keyof Exercise,
-    value: string | number
+    value: string | number,
   ) => {
     const updatedExercises = exercises.map((exercise, i) => {
       if (i === index) {
@@ -179,11 +179,11 @@ function App() {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     const milliseconds = Math.floor((remainingSeconds % 1) * 1000);
-    return `${minutes.toString().padStart(2, "0")}:${Math.floor(
-      remainingSeconds
+    return `${minutes.toString().padStart(2, '0')}:${Math.floor(
+      remainingSeconds,
     )
       .toString()
-      .padStart(2, "0")}.${milliseconds.toString().padStart(3, "0")}`;
+      .padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   };
 
   const getRemainingTime = (progress: number) => {
@@ -200,11 +200,11 @@ function App() {
     lastUpdateTimeRef.current = timestamp;
 
     if (isRunning && currentExercise < exercises.length) {
-      if (timerState === "resting") {
+      if (timerState === 'resting') {
         setCurrentRestTime((prev) => {
           const newTime = Math.max(0, prev - deltaTime);
           if (newTime <= 0) {
-            setTimerState("running");
+            setTimerState('running');
             return restTime;
           }
           return newTime;
@@ -218,21 +218,21 @@ function App() {
           if (exercise.leftProgress < 100) {
             exercise.leftProgress = Math.min(
               100,
-              exercise.leftProgress + progressIncrement
+              exercise.leftProgress + progressIncrement,
             );
           } else if (exercise.rightProgress < 100) {
             exercise.rightProgress = Math.min(
               100,
-              exercise.rightProgress + progressIncrement
+              exercise.rightProgress + progressIncrement,
             );
           } else {
             if (currentExercise === exercises.length - 1) {
-              setTimerState("completed");
+              setTimerState('completed');
               setIsRunning(false);
               return newExercises;
             } else {
               setCurrentRestTime(restTime);
-              setTimerState("resting");
+              setTimerState('resting');
               setCurrentExercise((prev) => prev + 1);
             }
           }
@@ -256,7 +256,7 @@ function App() {
   }, [isRunning, currentExercise, timerState]);
 
   const startTimer = () => {
-    setTimerState("running");
+    setTimerState('running');
     setIsRunning(true);
   };
 
@@ -269,7 +269,7 @@ function App() {
       cancelAnimationFrame(animationFrameRef.current);
     }
     setIsRunning(false);
-    setTimerState("idle");
+    setTimerState('idle');
     setCurrentExercise(0);
     setCurrentRestTime(restTime);
     startTimeRef.current = 0;
@@ -278,7 +278,7 @@ function App() {
         ...exercise,
         leftProgress: 0,
         rightProgress: 0,
-      }))
+      })),
     );
   };
 
@@ -286,11 +286,11 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
       <Card
         className={cn(
-          "w-full max-w-2xl p-6 space-y-6 backdrop-blur-lg transition-colors",
-          timerState === "idle" && "bg-black/20",
-          timerState === "running" && "bg-black/20",
-          timerState === "resting" && "bg-blue-500/20",
-          timerState === "completed" && "bg-black/20"
+          'w-full max-w-2xl p-6 space-y-6 backdrop-blur-lg transition-colors',
+          timerState === 'idle' && 'bg-black/20',
+          timerState === 'running' && 'bg-black/20',
+          timerState === 'resting' && 'bg-blue-500/20',
+          timerState === 'completed' && 'bg-black/20',
         )}
       >
         <div className="flex items-center justify-center space-x-2">
@@ -328,10 +328,10 @@ function App() {
             <div
               key={index}
               className={cn(
-                "grid grid-cols-[1fr,2fr,auto] gap-4 items-center p-2",
+                'grid grid-cols-[1fr,2fr,auto] gap-4 items-center p-2',
                 currentExercise === index &&
-                  timerState === "running" &&
-                  "bg-blue-500/10 rounded-lg"
+                  timerState === 'running' &&
+                  'bg-blue-500/10 rounded-lg',
               )}
             >
               <div>
@@ -340,10 +340,10 @@ function App() {
                   id={`exercise-${index}`}
                   value={exercise.name}
                   onChange={(e) =>
-                    updateExercise(index, "name", e.target.value)
+                    updateExercise(index, 'name', e.target.value)
                   }
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !isRunning) {
+                    if (e.key === 'Enter' && !isRunning) {
                       e.preventDefault();
                       addExercise();
                     }
@@ -398,7 +398,7 @@ function App() {
               </Button>
             )}
 
-            {timerState === "resting" && (
+            {timerState === 'resting' && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4" />
                 <span>Rest: {formatTime(currentRestTime)}</span>
@@ -410,7 +410,7 @@ function App() {
             {!isRunning ? (
               <Button
                 onClick={startTimer}
-                disabled={timerState === "completed"}
+                disabled={timerState === 'completed'}
               >
                 <Play className="w-4 h-4 mr-2" />
                 Start
@@ -428,7 +428,7 @@ function App() {
           </div>
         </div>
 
-        {timerState === "completed" && (
+        {timerState === 'completed' && (
           <div className="text-center text-green-400 font-bold">
             Workout Complete! 🎉
           </div>
