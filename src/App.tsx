@@ -1,21 +1,12 @@
+import { ExerciseProgress } from '@/components/ExerciseProgress';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import {
-  Clock,
-  Pause,
-  Play,
-  Plus,
-  RotateCcw,
-  Timer,
-  Trash2,
-} from 'lucide-react';
+import { Pause, Play, Plus, RotateCcw, Timer, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { TimerEvent } from './computeElapsedTime';
-import { TimerNodeProgress, TreeTimerProgress } from './tree-timer';
+import { TreeTimerProgress } from './tree-timer';
 import {
   Exercise,
   WorkoutState,
@@ -61,91 +52,65 @@ const decodeState = (encoded: string) => {
 const STORAGE_KEY = 'workout-timer-state';
 
 function App() {
+  const [isRunning, setIsRunning] = useState(false);
   const [workoutState, setWorkoutState] = useState<WorkoutState>(() => {
-    const defaultState = createWorkoutState(
+    // First try to load from URL
+    const params = new URLSearchParams(window.location.search);
+    const encodedState = params.get('state');
+    if (encodedState) {
+      const decoded = decodeState(encodedState);
+      if (decoded) {
+        return createWorkoutState(
+          decoded.exercises,
+          decoded.exerciseTimeMs,
+          decoded.restTimeMs,
+        );
+      }
+    }
+
+    // Fallback to local storage
+    const storedState = localStorage.getItem(STORAGE_KEY);
+    if (storedState) {
+      const decoded = decodeState(storedState);
+      if (decoded) {
+        return createWorkoutState(
+          decoded.exercises,
+          decoded.exerciseTimeMs,
+          decoded.restTimeMs,
+        );
+      }
+    }
+
+    // Default state
+    return createWorkoutState(
       [createExercise('Exercise 1')],
       30 * 1000, // 30 seconds
       10 * 1000, // 10 seconds
     );
-    return defaultState;
   });
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [progress, setProgress] = useState<TreeTimerProgress>(() =>
+    computeWorkoutProgress(workoutState),
+  );
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [progress, setProgress] = useState<TreeTimerProgress>(() => {
-    const initialProgress = computeWorkoutProgress(workoutState);
-    return initialProgress;
-  });
-
-  const isRunning =
-    workoutState.events.length > 0 &&
-    workoutState.events[workoutState.events.length - 1].type !== 'pause';
 
   // Update progress while timer is running
   useEffect(() => {
     if (!isRunning) return;
 
-    let frameId: number;
+    let animationFrameId: number;
     const updateProgress = () => {
-      const newProgress = computeWorkoutProgress(workoutState);
-      setProgress(newProgress);
-      frameId = requestAnimationFrame(updateProgress);
+      setProgress(computeWorkoutProgress(workoutState));
+      animationFrameId = requestAnimationFrame(updateProgress);
     };
+    animationFrameId = requestAnimationFrame(updateProgress);
 
-    frameId = requestAnimationFrame(updateProgress);
-    return () => cancelAnimationFrame(frameId);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
   }, [isRunning, workoutState]);
-
-  // Initialize state from URL or local storage on mount
-  useEffect(() => {
-    const loadInitialState = () => {
-      console.log('Loading initial state...');
-      const params = new URLSearchParams(window.location.search);
-      const encodedState = params.get('state');
-      console.log('URL state:', encodedState);
-
-      if (encodedState) {
-        const decoded = decodeState(encodedState);
-        console.log('Decoded URL state:', decoded);
-        if (decoded) {
-          setWorkoutState(
-            createWorkoutState(
-              decoded.exercises,
-              decoded.exerciseTimeMs,
-              decoded.restTimeMs,
-            ),
-          );
-          console.log('Set state from URL');
-          return;
-        }
-      }
-
-      // Fallback to local storage if no valid URL state
-      const storedState = localStorage.getItem(STORAGE_KEY);
-      console.log('Local storage state:', storedState);
-      if (storedState) {
-        const decoded = decodeState(storedState);
-        console.log('Decoded local storage state:', decoded);
-        if (decoded) {
-          setWorkoutState(
-            createWorkoutState(
-              decoded.exercises,
-              decoded.exerciseTimeMs,
-              decoded.restTimeMs,
-            ),
-          );
-          console.log('Set state from local storage');
-        }
-      }
-    };
-
-    loadInitialState();
-    setIsInitialLoad(false);
-  }, []);
 
   // Update URL and local storage when state changes
   useEffect(() => {
-    if (isInitialLoad) return;
-
     const encoded = encodeState(
       workoutState.exercises,
       workoutState.exerciseTimeMs,
@@ -160,7 +125,6 @@ function App() {
     workoutState.exercises,
     workoutState.exerciseTimeMs,
     workoutState.restTimeMs,
-    isInitialLoad,
   ]);
 
   const addExercise = () => {
@@ -198,37 +162,33 @@ function App() {
     }));
   };
 
-  const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    const remainingMs = ms % 1000;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds
-      .toString()
-      .padStart(2, '0')}.${remainingMs.toString().padStart(3, '0')}`;
-  };
-
-  const addEvent = (event: TimerEvent) => {
+  const startTimer = () => {
+    const now = Date.now();
     setWorkoutState((prev) => ({
       ...prev,
-      events: [...prev.events, event],
+      events: [...prev.events, { type: 'start', timeMs: now }],
     }));
-  };
-
-  const startTimer = () => {
-    addEvent({ type: 'start', timeMs: Date.now() });
+    setIsRunning(true);
   };
 
   const pauseTimer = () => {
-    addEvent({ type: 'pause', timeMs: Date.now() });
+    const now = Date.now();
+    setWorkoutState((prev) => ({
+      ...prev,
+      events: [...prev.events, { type: 'pause', timeMs: now }],
+    }));
+    setIsRunning(false);
   };
 
   const resetTimer = () => {
-    setWorkoutState((prev) => ({
-      ...prev,
-      events: [],
-    }));
-    setProgress(computeWorkoutProgress(workoutState));
+    setWorkoutState(
+      createWorkoutState(
+        [createExercise('Exercise 1')],
+        30 * 1000, // 30 seconds
+        10 * 1000, // 10 seconds
+      ),
+    );
+    setIsRunning(false);
   };
 
   return (
@@ -246,7 +206,7 @@ function App() {
           <h1 className="text-2xl font-bold text-primary">Exercise Timer</h1>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
             <Label htmlFor="exerciseTime text-red-500">
               Exercise Time (seconds)
@@ -291,69 +251,68 @@ function App() {
             const rightProgress = progress.progressById.get(
               `${exercise.id}-right`,
             );
+            const restProgress = progress.progressById.get(
+              `${exercise.id}-rest`,
+            );
 
             return (
-              <div
-                key={exercise.id}
-                className={cn(
-                  'grid grid-cols-[1fr,2fr,auto] gap-4 items-center p-2',
-                  (leftProgress?.state === 'running' ||
-                    rightProgress?.state === 'running') &&
-                    'bg-blue-500/10 rounded-lg',
-                )}
-              >
-                <div>
-                  <Input
-                    ref={(el) => (inputRefs.current[index] = el)}
-                    id={`exercise-${index}`}
-                    value={exercise.name}
-                    onChange={(e) => updateExercise(index, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isRunning) {
-                        e.preventDefault();
-                        addExercise();
-                      }
-                    }}
-                    placeholder="Exercise name"
-                    disabled={isRunning}
-                    className="bg-white/5"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <div className="relative">
-                    <Progress
-                      value={(leftProgress?.progressFraction ?? 0) * 100}
-                      className="h-6"
-                    />
-                    <div className="absolute inset-0 flex justify-between items-center px-3">
-                      <span className="text-xs text-white/70">Left</span>
-                      <span className="text-xs font-medium font-mono">
-                        {formatTime(leftProgress?.remainingTimeMs ?? 0)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <Progress
-                      value={(rightProgress?.progressFraction ?? 0) * 100}
-                      className="h-6"
-                    />
-                    <div className="absolute inset-0 flex justify-between items-center px-3">
-                      <span className="text-xs text-white/70">Right</span>
-                      <span className="text-xs font-medium font-mono">
-                        {formatTime(rightProgress?.remainingTimeMs ?? 0)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeExercise(index)}
-                  disabled={isRunning || workoutState.exercises.length === 1}
+              <>
+                <div
+                  className={cn(
+                    'grid grid-cols-[1fr,2fr,auto] gap-4 items-center p-2',
+                    (leftProgress?.state === 'running' ||
+                      rightProgress?.state === 'running') &&
+                      'bg-blue-500/10 rounded-lg',
+                  )}
                 >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
+                  <div>
+                    <Input
+                      ref={(el) => (inputRefs.current[index] = el)}
+                      id={`exercise-${index}`}
+                      value={exercise.name}
+                      onChange={(e) => updateExercise(index, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !isRunning) {
+                          e.preventDefault();
+                          addExercise();
+                        }
+                      }}
+                      placeholder="Exercise name"
+                      disabled={isRunning}
+                      className="bg-white/5"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <ExerciseProgress label="Left" progress={leftProgress} />
+                    <ExerciseProgress label="Right" progress={rightProgress} />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeExercise(index)}
+                    disabled={isRunning || workoutState.exercises.length === 1}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/*********************************************************/}
+                {/* Rest */}
+                {index < workoutState.exercises.length - 1 && (
+                  <div
+                    className={cn(
+                      'p-2 rounded-lg',
+                      restProgress?.state === 'running' && 'bg-blue-500/10',
+                    )}
+                  >
+                    <ExerciseProgress
+                      label="Rest"
+                      progress={restProgress}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+              </>
             );
           })}
         </div>
@@ -369,24 +328,6 @@ function App() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Exercise
               </Button>
-            )}
-
-            {Array.from(progress.progressById.values()).some(
-              (node: TimerNodeProgress) =>
-                node.id.endsWith('-rest') && node.state === 'running',
-            ) && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="w-4 h-4" />
-                <span>
-                  Rest:{' '}
-                  {formatTime(
-                    Array.from(progress.progressById.values()).find(
-                      (node: TimerNodeProgress) =>
-                        node.id.endsWith('-rest') && node.state === 'running',
-                    )?.remainingTimeMs ?? 0,
-                  )}
-                </span>
-              </div>
             )}
           </div>
 
