@@ -235,6 +235,26 @@ function App() {
     }
   };
 
+  const resetCurrentExercise = () => {
+    if (progress.currentNodeId) {
+      const currentNode = progress.progressById.get(progress.currentNodeId);
+      if (currentNode) {
+        const newState = {
+          ...workoutState,
+          events: [
+            ...workoutState.events,
+            {
+              type: 'add-time' as const,
+              // Add negative time equal to elapsed time to reset the current exercise
+              timeMs: -(currentNode.timeElapsedMs - 0.001),
+            },
+          ],
+        };
+        setWorkoutState(newState);
+      }
+    }
+  };
+
   const isRunning = progress.rootProgress.state === 'running';
 
   return (
@@ -371,10 +391,16 @@ function App() {
           <div className="flex items-center gap-2">
             {isStarted ? (
               isRunning ? (
-                <Button onClick={skipCurrentTimer} variant="secondary">
-                  <FastForward className="w-4 h-4 mr-2" />
-                  Skip
-                </Button>
+                <>
+                  <Button onClick={resetCurrentExercise} variant="secondary">
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Redo
+                  </Button>
+                  <Button onClick={skipCurrentTimer} variant="secondary">
+                    <FastForward className="w-4 h-4 mr-2" />
+                    Skip
+                  </Button>
+                </>
               ) : (
                 <div className="text-center text-green-400 font-bold">
                   Workout Complete! 🎉
