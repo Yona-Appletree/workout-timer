@@ -398,71 +398,68 @@ function App() {
           })}
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            {isStarted ? (
-              isRunning ? (
-                <>
-                  <Button onClick={resetCurrentExercise} variant="secondary">
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Redo
-                  </Button>
-                  <Button onClick={skipCurrentTimer} variant="secondary">
-                    <FastForward className="w-4 h-4 mr-2" />
-                    Skip
-                  </Button>
-                </>
-              ) : (
-                <div className="text-center text-green-400 font-bold">
-                  Workout Complete! 🎉
-                </div>
-              )
-            ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 justify-between items-center gap-2">
+          {isStarted ? (
+            isRunning ? (
               <>
-                <Button
-                  onClick={addExercise}
-                  variant="outline"
-                  disabled={isStarted}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Exercise
-                </Button>
-                <Button
-                  onClick={startTimer}
-                  disabled={progress.rootProgress.state === 'finished'}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Start
-                </Button>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {isStarted ? (
-              <>
-                {isRunning && (
-                  <Button onClick={pauseTimer} variant="secondary">
-                    {isPaused ? (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Resume
-                      </>
-                    ) : (
-                      <>
-                        <Pause className="w-4 h-4 mr-2" />
-                        Pause
-                      </>
-                    )}
-                  </Button>
-                )}
-                <Button onClick={resetTimer} variant="outline">
+                <Button onClick={resetCurrentExercise} variant="secondary">
                   <RotateCcw className="w-4 h-4 mr-2" />
-                  Reset
+                  Redo
+                </Button>
+                <Button onClick={skipCurrentTimer} variant="secondary">
+                  <FastForward className="w-4 h-4 mr-2" />
+                  Skip
                 </Button>
               </>
-            ) : null}
-          </div>
+            ) : (
+              <div className="text-center text-green-400 font-bold">
+                Workout Complete! 🎉
+              </div>
+            )
+          ) : (
+            <>
+              <Button
+                onClick={addExercise}
+                variant="outline"
+                disabled={isStarted}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Exercise
+              </Button>
+              <Button
+                onClick={startTimer}
+                disabled={progress.rootProgress.state === 'finished'}
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start
+              </Button>
+            </>
+          )}
+
+          {isStarted ? (
+            <>
+              {isRunning && (
+                <Button onClick={pauseTimer} variant="secondary">
+                  {isPaused ? (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Resume
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <Button onClick={resetTimer} variant="outline">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset
+              </Button>
+            </>
+          ) : null}
         </div>
       </Card>
       <div className="text-sm text-white/50 font-['Dancing_Script'] text-right mt-4">
