@@ -2,6 +2,9 @@ export function computeTreeTimerProgress(
   root: TreeTimerNode,
   overallTimeElapsedMs: number,
 ): TreeTimerProgress {
+  let currentNodeId: string | null = null;
+  let lastStartedNodeId: string | null = null;
+
   function buildProgress(
     node: TreeTimerNode,
     prevDurationMs: number,
@@ -12,6 +15,16 @@ export function computeTreeTimerProgress(
           overallTimeElapsedMs > prevDurationMs
             ? Math.min(overallTimeElapsedMs - prevDurationMs, node.durationMs)
             : 0;
+
+        // Track the current node (last started but not finished)
+        if (timeElapsedMs > 0 && timeElapsedMs < node.durationMs) {
+          currentNodeId = node.id;
+        }
+        // Track the last started node
+        if (timeElapsedMs > 0) {
+          lastStartedNodeId = node.id;
+        }
+
         return {
           id: node.id,
           timeElapsedMs,
@@ -76,17 +89,20 @@ export function computeTreeTimerProgress(
     }
   }
 
+  const rootProgress = buildProgress(root, 0);
   return {
-    rootProgress: buildProgress(root, 0),
+    rootProgress,
     progressById: new Map(
-      collectNodes(buildProgress(root, 0)).map((node) => [node.id, node]),
+      collectNodes(rootProgress).map((node) => [node.id, node]),
     ),
+    currentNodeId: currentNodeId ?? lastStartedNodeId,
   };
 }
 
 export interface TreeTimerProgress {
   rootProgress: TimerNodeProgress;
   progressById: Map<string, TimerNodeProgress>;
+  currentNodeId: string | null;
 }
 
 export type TreeTimerNode = { id: string } & (

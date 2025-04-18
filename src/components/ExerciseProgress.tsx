@@ -20,9 +20,9 @@ export function ExerciseProgress({
           className="h-6"
         />
         <div className="absolute inset-0 flex justify-between items-center px-3">
-          <span className="text-xs text-white/70">{label}</span>
+          <span className="text-xs font-bold text-white/70">{label}</span>
           <span className="text-xs font-medium font-mono">
-            {formatTime(progress?.remainingTimeMs ?? 0)}
+            {formatTime(progress?.timeElapsedMs ?? 0)}
           </span>
         </div>
       </div>

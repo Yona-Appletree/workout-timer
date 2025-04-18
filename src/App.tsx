@@ -4,7 +4,15 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Pause, Play, Plus, RotateCcw, Timer, Trash2 } from 'lucide-react';
+import {
+  FastForward,
+  Pause,
+  Play,
+  Plus,
+  RotateCcw,
+  Timer,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { TreeTimerProgress } from './tree-timer';
 import {
@@ -21,19 +29,19 @@ const encodeState = (
   exerciseTimeMs: number,
   restTimeMs: number,
 ) => {
-  // Format: exerciseTimeMs,restTimeMs|exercise1Name|exercise2Name|...
+  // Format: exerciseTimeSec,restTimeSec|exercise1Name|exercise2Name|...
   const exerciseNames = exercises
     .map((ex) => encodeURIComponent(ex.name))
     .join('|');
-  return `${exerciseTimeMs},${restTimeMs}|${exerciseNames}`;
+  return `${Math.round(exerciseTimeMs / 1000)},${Math.round(restTimeMs / 1000)}|${exerciseNames}`;
 };
 
 const decodeState = (encoded: string) => {
   try {
     const [times, ...exerciseNames] = encoded.split('|');
-    const [exerciseTimeMs, restTimeMs] = times.split(',').map(Number);
+    const [exerciseTimeSec, restTimeSec] = times.split(',').map(Number);
 
-    if (isNaN(exerciseTimeMs) || isNaN(restTimeMs)) {
+    if (isNaN(exerciseTimeSec) || isNaN(restTimeSec)) {
       throw new Error('Invalid time values');
     }
 
@@ -41,7 +49,11 @@ const decodeState = (encoded: string) => {
       createExercise(decodeURIComponent(name)),
     );
 
-    return { exercises, exerciseTimeMs, restTimeMs };
+    return {
+      exercises,
+      exerciseTimeMs: exerciseTimeSec * 1000,
+      restTimeMs: restTimeSec * 1000,
+    };
   } catch (error) {
     console.error('Failed to decode state:', error);
     return null;
@@ -181,14 +193,27 @@ function App() {
   };
 
   const resetTimer = () => {
-    setWorkoutState(
-      createWorkoutState(
-        [createExercise('Exercise 1')],
-        30 * 1000, // 30 seconds
-        10 * 1000, // 10 seconds
-      ),
-    );
+    setWorkoutState((prev) => ({
+      ...prev,
+      events: [],
+    }));
+    setProgress(computeWorkoutProgress(workoutState));
     setIsRunning(false);
+  };
+
+  const skipCurrentTimer = () => {
+    if (progress.currentNodeId) {
+      const currentNode = progress.progressById.get(progress.currentNodeId);
+      if (currentNode) {
+        setWorkoutState((prev) => ({
+          ...prev,
+          events: [
+            ...prev.events,
+            { type: 'add-time', timeMs: currentNode.remainingTimeMs },
+          ],
+        }));
+      }
+    }
   };
 
   return (
@@ -266,21 +291,25 @@ function App() {
                   )}
                 >
                   <div>
-                    <Input
-                      ref={(el) => (inputRefs.current[index] = el)}
-                      id={`exercise-${index}`}
-                      value={exercise.name}
-                      onChange={(e) => updateExercise(index, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !isRunning) {
-                          e.preventDefault();
-                          addExercise();
-                        }
-                      }}
-                      placeholder="Exercise name"
-                      disabled={isRunning}
-                      className="bg-white/5"
-                    />
+                    {isRunning ? (
+                      <div className="text-xl text-white">{exercise.name}</div>
+                    ) : (
+                      <Input
+                        ref={(el) => (inputRefs.current[index] = el)}
+                        id={`exercise-${index}`}
+                        value={exercise.name}
+                        onChange={(e) => updateExercise(index, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !isRunning) {
+                            e.preventDefault();
+                            addExercise();
+                          }
+                        }}
+                        placeholder="Exercise name"
+                        disabled={isRunning}
+                        className="bg-white/5"
+                      />
+                    )}
                   </div>
                   <div className="space-y-1">
                     <ExerciseProgress label="Left" progress={leftProgress} />
@@ -341,10 +370,16 @@ function App() {
                 Start
               </Button>
             ) : (
-              <Button onClick={pauseTimer} variant="secondary">
-                <Pause className="w-4 h-4 mr-2" />
-                Pause
-              </Button>
+              <>
+                <Button onClick={pauseTimer} variant="secondary">
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pause
+                </Button>
+                <Button onClick={skipCurrentTimer} variant="secondary">
+                  <FastForward className="w-4 h-4 mr-2" />
+                  Skip
+                </Button>
+              </>
             )}
             <Button onClick={resetTimer} variant="outline">
               <RotateCcw className="w-4 h-4 mr-2" />
