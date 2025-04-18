@@ -64,7 +64,6 @@ const decodeState = (encoded: string) => {
 const STORAGE_KEY = 'workout-timer-state';
 
 function App() {
-  const [isRunning, setIsRunning] = useState(false);
   const [workoutState, setWorkoutState] = useState<WorkoutState>(() => {
     // First try to load from URL
     const params = new URLSearchParams(window.location.search);
@@ -104,6 +103,12 @@ function App() {
     computeWorkoutProgress(workoutState),
   );
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const isRunning = workoutState.events.length > 0;
+  const isPaused =
+    workoutState.events.length > 0 &&
+    workoutState.events.filter((it) => it.type != 'add-time').at(-1)?.type ===
+      'pause';
 
   // Update progress while timer is running
   useEffect(() => {
@@ -180,38 +185,41 @@ function App() {
       ...prev,
       events: [...prev.events, { type: 'start', timeMs: now }],
     }));
-    setIsRunning(true);
   };
 
   const pauseTimer = () => {
     const now = Date.now();
     setWorkoutState((prev) => ({
       ...prev,
-      events: [...prev.events, { type: 'pause', timeMs: now }],
+      events: [
+        ...prev.events,
+        { type: isPaused ? 'resume' : 'pause', timeMs: now },
+      ],
     }));
-    setIsRunning(false);
   };
 
   const resetTimer = () => {
-    setWorkoutState((prev) => ({
-      ...prev,
+    const newState = {
+      ...workoutState,
       events: [],
-    }));
-    setProgress(computeWorkoutProgress(workoutState));
-    setIsRunning(false);
+    };
+    setWorkoutState(newState);
+    setProgress(computeWorkoutProgress(newState));
   };
 
   const skipCurrentTimer = () => {
     if (progress.currentNodeId) {
       const currentNode = progress.progressById.get(progress.currentNodeId);
       if (currentNode) {
-        setWorkoutState((prev) => ({
-          ...prev,
+        const newState = {
+          ...workoutState,
           events: [
-            ...prev.events,
-            { type: 'add-time', timeMs: currentNode.remainingTimeMs },
+            ...workoutState.events,
+            { type: 'add-time' as const, timeMs: currentNode.remainingTimeMs },
           ],
-        }));
+        };
+        setWorkoutState(newState);
+        setProgress(computeWorkoutProgress(newState));
       }
     }
   };
@@ -348,7 +356,14 @@ function App() {
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            {!isRunning && (
+            {isRunning ? (
+              <>
+                <Button onClick={skipCurrentTimer} variant="secondary">
+                  <FastForward className="w-4 h-4 mr-2" />
+                  Skip
+                </Button>
+              </>
+            ) : (
               <Button
                 onClick={addExercise}
                 variant="outline"
@@ -361,7 +376,21 @@ function App() {
           </div>
 
           <div className="space-x-2">
-            {!isRunning ? (
+            {isRunning ? (
+              <Button onClick={pauseTimer} variant="secondary">
+                {isPaused ? (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Resume
+                  </>
+                ) : (
+                  <>
+                    <Pause className="w-4 h-4 mr-2" />
+                    Pause
+                  </>
+                )}
+              </Button>
+            ) : (
               <Button
                 onClick={startTimer}
                 disabled={progress.rootProgress.state === 'finished'}
@@ -369,17 +398,6 @@ function App() {
                 <Play className="w-4 h-4 mr-2" />
                 Start
               </Button>
-            ) : (
-              <>
-                <Button onClick={pauseTimer} variant="secondary">
-                  <Pause className="w-4 h-4 mr-2" />
-                  Pause
-                </Button>
-                <Button onClick={skipCurrentTimer} variant="secondary">
-                  <FastForward className="w-4 h-4 mr-2" />
-                  Skip
-                </Button>
-              </>
             )}
             <Button onClick={resetTimer} variant="outline">
               <RotateCcw className="w-4 h-4 mr-2" />
