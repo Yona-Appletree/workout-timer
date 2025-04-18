@@ -258,7 +258,7 @@ function App() {
   const isRunning = progress.rootProgress.state === 'running';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex flex-col items-center justify-center p-4">
       <Card
         className={cn(
           'w-full max-w-2xl p-6 space-y-6 backdrop-blur-lg transition-colors',
@@ -272,7 +272,7 @@ function App() {
           <h1 className="text-2xl font-bold text-primary">Exercise Timer</h1>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div className="space-y-2">
             <Label htmlFor="exerciseTime text-red-500">
               Exercise Time (seconds)
@@ -325,45 +325,51 @@ function App() {
               <>
                 <div
                   className={cn(
-                    'grid grid-cols-[1fr,2fr,auto] gap-4 items-center p-2',
+                    'flex flex-col md:grid md:grid-cols-[1fr,2fr] gap-4 items-center p-2',
                     (leftProgress?.state === 'running' ||
                       rightProgress?.state === 'running') &&
                       'bg-blue-500/10 rounded-lg',
                   )}
                 >
-                  <div>
+                  <div className="w-full md:w-auto flex items-center gap-2">
                     {isStarted ? (
-                      <div className="text-xl text-white">{exercise.name}</div>
+                      <div className="text-xl text-white text-center md:text-left flex-1">
+                        {exercise.name}
+                      </div>
                     ) : (
-                      <Input
-                        ref={(el) => (inputRefs.current[index] = el)}
-                        id={`exercise-${index}`}
-                        value={exercise.name}
-                        onChange={(e) => updateExercise(index, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !isStarted) {
-                            e.preventDefault();
-                            addExercise();
+                      <>
+                        <Input
+                          ref={(el) => (inputRefs.current[index] = el)}
+                          id={`exercise-${index}`}
+                          value={exercise.name}
+                          onChange={(e) =>
+                            updateExercise(index, e.target.value)
                           }
-                        }}
-                        placeholder="Exercise name"
-                        disabled={isStarted}
-                        className="bg-white/5"
-                      />
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !isStarted) {
+                              e.preventDefault();
+                              addExercise();
+                            }
+                          }}
+                          placeholder="Exercise name"
+                          disabled={isStarted}
+                          className="bg-white/5 flex-1"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeExercise(index)}
+                          disabled={workoutState.exercises.length === 1}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 w-full md:w-auto">
                     <ExerciseProgress label="Left" progress={leftProgress} />
                     <ExerciseProgress label="Right" progress={rightProgress} />
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeExercise(index)}
-                    disabled={isStarted || workoutState.exercises.length === 1}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
 
                 {/*********************************************************/}
@@ -387,7 +393,7 @@ function App() {
           })}
         </div>
 
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             {isStarted ? (
               isRunning ? (
@@ -407,54 +413,55 @@ function App() {
                 </div>
               )
             ) : (
-              <Button
-                onClick={addExercise}
-                variant="outline"
-                disabled={isStarted}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Exercise
-              </Button>
+              <>
+                <Button
+                  onClick={addExercise}
+                  variant="outline"
+                  disabled={isStarted}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Exercise
+                </Button>
+                <Button
+                  onClick={startTimer}
+                  disabled={progress.rootProgress.state === 'finished'}
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Start
+                </Button>
+              </>
             )}
           </div>
 
-          <div className="space-x-2">
+          <div className="flex items-center gap-2">
             {isStarted ? (
-              isRunning && (
-                <Button onClick={pauseTimer} variant="secondary">
-                  {isPaused ? (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      Resume
-                    </>
-                  ) : (
-                    <>
-                      <Pause className="w-4 h-4 mr-2" />
-                      Pause
-                    </>
-                  )}
+              <>
+                {isRunning && (
+                  <Button onClick={pauseTimer} variant="secondary">
+                    {isPaused ? (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Resume
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-4 h-4 mr-2" />
+                        Pause
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button onClick={resetTimer} variant="outline">
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset
                 </Button>
-              )
-            ) : (
-              <Button
-                onClick={startTimer}
-                disabled={progress.rootProgress.state === 'finished'}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Start
-              </Button>
-            )}
-            <Button onClick={resetTimer} variant="outline">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset
-            </Button>
+              </>
+            ) : null}
           </div>
         </div>
       </Card>
-      <div className="absolute bottom-4 right-4 text-white/50 font-['Dancing_Script']">
-        <a href="https://www.photomancer.art" target="_blank">
-          Made with ❤️ by Hypher
-        </a>
+      <div className="text-sm text-white/50 font-['Dancing_Script'] text-right mt-4">
+        Made with ❤️ by Yona
       </div>
     </div>
   );
