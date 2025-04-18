@@ -41,7 +41,7 @@ const decodeState = (encoded: string) => {
     const [exerciseTimeSec, restTimeSec] = times.split(',').map(Number);
 
     if (isNaN(exerciseTimeSec) || isNaN(restTimeSec)) {
-      throw new Error('Invalid time values');
+      return null;
     }
 
     const exercises = exerciseNames.map((name) =>
@@ -246,7 +246,7 @@ function App() {
             {
               type: 'add-time' as const,
               // Add negative time equal to elapsed time to reset the current exercise
-              timeMs: -(currentNode.timeElapsedMs - 0.001),
+              timeMs: -(currentNode.timeElapsedMs + 0.001),
             },
           ],
         };
@@ -258,7 +258,12 @@ function App() {
   const isRunning = progress.rootProgress.state === 'running';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex flex-col items-center justify-center p-4">
+    <div
+      className="
+      min-h-screen bg-gradient-to-br from-gray-900
+      to-gray-800 text-white flex flex-col items-center justify-center p-4
+    "
+    >
       <Card
         className={cn(
           'w-full max-w-2xl p-6 space-y-6 backdrop-blur-lg transition-colors',
@@ -461,7 +466,9 @@ function App() {
         </div>
       </Card>
       <div className="text-sm text-white/50 font-['Dancing_Script'] text-right mt-4">
-        Made with ❤️ by Yona
+        <a href="https://www.photomancer.art" target="_blank">
+          Made with ❤️ by Hypher
+        </a>
       </div>
     </div>
   );
