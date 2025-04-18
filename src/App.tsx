@@ -228,6 +228,7 @@ function App() {
       ...prev,
       events: [],
     }));
+    setProgress(computeWorkoutProgress(workoutState));
   };
 
   return (
