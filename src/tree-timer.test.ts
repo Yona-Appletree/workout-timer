@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import {
   computeTreeTimerProgress,
-  TreeTimerNode,
   TimerNodeProgress,
+  TreeTimerNode,
 } from './tree-timer';
 
 describe('single node', () => {
   test('zero', () => {
-    expect(computeTreeTimerProgress(tree, 0)).toEqual({
+    expect(computeTreeTimerProgress(tree, 0).rootProgress).toEqual({
       id: '1',
       timeElapsedMs: 0,
       remainingTimeMs: 1000,
@@ -18,7 +18,7 @@ describe('single node', () => {
   });
 
   test('30%', () => {
-    expect(computeTreeTimerProgress(tree, 300)).toEqual({
+    expect(computeTreeTimerProgress(tree, 300).rootProgress).toEqual({
       id: '1',
       timeElapsedMs: 300,
       remainingTimeMs: 700,
@@ -29,7 +29,7 @@ describe('single node', () => {
   });
 
   test('100%', () => {
-    expect(computeTreeTimerProgress(tree, 1000)).toEqual({
+    expect(computeTreeTimerProgress(tree, 1000).rootProgress).toEqual({
       id: '1',
       timeElapsedMs: 1000,
       remainingTimeMs: 0,
@@ -48,7 +48,7 @@ describe('single node', () => {
 
 describe('tree', () => {
   test('zero', () => {
-    expect(computeTreeTimerProgress(tree, 0)).toEqual({
+    expect(computeTreeTimerProgress(tree, 0).rootProgress).toEqual({
       id: '1',
       timeElapsedMs: 0,
       remainingTimeMs: 3000,
@@ -77,7 +77,7 @@ describe('tree', () => {
   });
 
   test('600ms', () => {
-    expect(computeTreeTimerProgress(tree, 600)).toEqual({
+    expect(computeTreeTimerProgress(tree, 600).rootProgress).toEqual({
       id: '1',
       timeElapsedMs: 600,
       remainingTimeMs: 2400,
@@ -105,9 +105,16 @@ describe('tree', () => {
     } satisfies TimerNodeProgress);
   });
 
+  test('1000ms', () => {
+    const elapsedMs = 1000;
+    expect(computeTreeTimerProgress(tree, elapsedMs).rootProgress).toEqual(
+      progressForElapsedMs(elapsedMs),
+    );
+  });
+
   test('1200ms', () => {
     const elapsedMs = 1200;
-    expect(computeTreeTimerProgress(tree, elapsedMs)).toEqual({
+    expect(computeTreeTimerProgress(tree, elapsedMs).rootProgress).toEqual({
       id: '1',
       timeElapsedMs: elapsedMs,
       remainingTimeMs: 3000 - elapsedMs,
@@ -137,7 +144,7 @@ describe('tree', () => {
 
   test('3500ms', () => {
     const elapsedMs = 3500;
-    expect(computeTreeTimerProgress(tree, elapsedMs)).toEqual(
+    expect(computeTreeTimerProgress(tree, elapsedMs).rootProgress).toEqual(
       progressForElapsedMs(elapsedMs),
     );
   });

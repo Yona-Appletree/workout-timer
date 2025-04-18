@@ -14,7 +14,6 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { TreeTimerProgress } from './tree-timer';
 import {
   Exercise,
   WorkoutState,
@@ -93,18 +92,27 @@ function App() {
     }
 
     // Default state
+    const defaultDecoded = decodeState('90,5|Hurdle|High%20leg%20lunge|Splits');
+    if (defaultDecoded) {
+      return createWorkoutState(
+        defaultDecoded.exercises,
+        defaultDecoded.exerciseTimeMs,
+        defaultDecoded.restTimeMs,
+      );
+    }
+
+    // Fallback to a basic state if decoding fails
     return createWorkoutState(
       [createExercise('Exercise 1')],
       30 * 1000, // 30 seconds
       10 * 1000, // 10 seconds
     );
   });
-  const [progress, setProgress] = useState<TreeTimerProgress>(() =>
-    computeWorkoutProgress(workoutState),
-  );
+
+  const progress = computeWorkoutProgress(workoutState);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const isRunning = workoutState.events.length > 0;
+  const isStarted = workoutState.events.length > 0;
   const isPaused =
     workoutState.events.length > 0 &&
     workoutState.events.filter((it) => it.type != 'add-time').at(-1)?.type ===
@@ -112,19 +120,20 @@ function App() {
 
   // Update progress while timer is running
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isStarted) return;
 
     let animationFrameId: number;
     const updateProgress = () => {
-      setProgress(computeWorkoutProgress(workoutState));
       animationFrameId = requestAnimationFrame(updateProgress);
+      // force a re-render
+      setWorkoutState((prev) => ({ ...prev }));
     };
     animationFrameId = requestAnimationFrame(updateProgress);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isRunning, workoutState]);
+  }, [isStarted, workoutState]);
 
   // Update URL and local storage when state changes
   useEffect(() => {
@@ -204,7 +213,6 @@ function App() {
       events: [],
     };
     setWorkoutState(newState);
-    setProgress(computeWorkoutProgress(newState));
   };
 
   const skipCurrentTimer = () => {
@@ -215,14 +223,19 @@ function App() {
           ...workoutState,
           events: [
             ...workoutState.events,
-            { type: 'add-time' as const, timeMs: currentNode.remainingTimeMs },
+            {
+              type: 'add-time' as const,
+              // Add a tiny bit of time to ensure we are in the next node, not in-between nodes
+              timeMs: currentNode.remainingTimeMs + 0.001,
+            },
           ],
         };
         setWorkoutState(newState);
-        setProgress(computeWorkoutProgress(newState));
       }
     }
   };
+
+  const isRunning = progress.rootProgress.state === 'running';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex items-center justify-center p-4">
@@ -255,7 +268,7 @@ function App() {
                 }))
               }
               className="bg-white/5"
-              disabled={isRunning}
+              disabled={isStarted}
             />
           </div>
           <div className="space-y-2">
@@ -271,7 +284,7 @@ function App() {
                 }))
               }
               className="bg-white/5"
-              disabled={isRunning}
+              disabled={isStarted}
             />
           </div>
         </div>
@@ -299,7 +312,7 @@ function App() {
                   )}
                 >
                   <div>
-                    {isRunning ? (
+                    {isStarted ? (
                       <div className="text-xl text-white">{exercise.name}</div>
                     ) : (
                       <Input
@@ -308,13 +321,13 @@ function App() {
                         value={exercise.name}
                         onChange={(e) => updateExercise(index, e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !isRunning) {
+                          if (e.key === 'Enter' && !isStarted) {
                             e.preventDefault();
                             addExercise();
                           }
                         }}
                         placeholder="Exercise name"
-                        disabled={isRunning}
+                        disabled={isStarted}
                         className="bg-white/5"
                       />
                     )}
@@ -327,7 +340,7 @@ function App() {
                     variant="ghost"
                     size="icon"
                     onClick={() => removeExercise(index)}
-                    disabled={isRunning || workoutState.exercises.length === 1}
+                    disabled={isStarted || workoutState.exercises.length === 1}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -356,18 +369,22 @@ function App() {
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            {isRunning ? (
-              <>
+            {isStarted ? (
+              isRunning ? (
                 <Button onClick={skipCurrentTimer} variant="secondary">
                   <FastForward className="w-4 h-4 mr-2" />
                   Skip
                 </Button>
-              </>
+              ) : (
+                <div className="text-center text-green-400 font-bold">
+                  Workout Complete! 🎉
+                </div>
+              )
             ) : (
               <Button
                 onClick={addExercise}
                 variant="outline"
-                disabled={isRunning}
+                disabled={isStarted}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Exercise
@@ -376,20 +393,22 @@ function App() {
           </div>
 
           <div className="space-x-2">
-            {isRunning ? (
-              <Button onClick={pauseTimer} variant="secondary">
-                {isPaused ? (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Resume
-                  </>
-                ) : (
-                  <>
-                    <Pause className="w-4 h-4 mr-2" />
-                    Pause
-                  </>
-                )}
-              </Button>
+            {isStarted ? (
+              isRunning && (
+                <Button onClick={pauseTimer} variant="secondary">
+                  {isPaused ? (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Resume
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause
+                    </>
+                  )}
+                </Button>
+              )
             ) : (
               <Button
                 onClick={startTimer}
@@ -405,12 +424,6 @@ function App() {
             </Button>
           </div>
         </div>
-
-        {progress.rootProgress.state === 'finished' && (
-          <div className="text-center text-green-400 font-bold">
-            Workout Complete! 🎉
-          </div>
-        )}
       </Card>
     </div>
   );
