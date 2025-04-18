@@ -5,7 +5,7 @@ export function computeTreeTimerProgress(
   function buildProgress(
     node: TreeTimerNode,
     prevDurationMs: number,
-  ): TreeTimerProgress {
+  ): TimerNodeProgress {
     switch (node.type) {
       case 'leaf': {
         const timeElapsedMs =
@@ -68,7 +68,25 @@ export function computeTreeTimerProgress(
     }
   }
 
-  return buildProgress(root, 0);
+  function collectNodes(node: TimerNodeProgress): Array<TimerNodeProgress> {
+    if (node.children) {
+      return [node, ...node.children.flatMap(collectNodes)];
+    } else {
+      return [node];
+    }
+  }
+
+  return {
+    rootProgress: buildProgress(root, 0),
+    progressById: new Map(
+      collectNodes(buildProgress(root, 0)).map((node) => [node.id, node]),
+    ),
+  };
+}
+
+export interface TreeTimerProgress {
+  rootProgress: TimerNodeProgress;
+  progressById: Map<string, TimerNodeProgress>;
 }
 
 export type TreeTimerNode = { id: string } & (
@@ -76,7 +94,7 @@ export type TreeTimerNode = { id: string } & (
   | { type: 'branch'; children: Array<TreeTimerNode> }
 );
 
-export interface TreeTimerProgress {
+export interface TimerNodeProgress {
   id: string;
 
   timeElapsedMs: number;
@@ -85,5 +103,5 @@ export interface TreeTimerProgress {
   progressFraction: number;
 
   state: 'not-started' | 'running' | 'finished';
-  children?: Array<TreeTimerProgress>;
+  children?: Array<TimerNodeProgress>;
 }

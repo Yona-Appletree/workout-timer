@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   computeTreeTimerProgress,
   TreeTimerNode,
-  TreeTimerProgress,
+  TimerNodeProgress,
 } from './tree-timer';
 
 describe('single node', () => {
@@ -14,7 +14,7 @@ describe('single node', () => {
       totalTimeMs: 1000,
       progressFraction: 0,
       state: 'not-started',
-    } satisfies TreeTimerProgress);
+    } satisfies TimerNodeProgress);
   });
 
   test('30%', () => {
@@ -25,7 +25,7 @@ describe('single node', () => {
       totalTimeMs: 1000,
       progressFraction: 0.3,
       state: 'running',
-    } satisfies TreeTimerProgress);
+    } satisfies TimerNodeProgress);
   });
 
   test('100%', () => {
@@ -36,7 +36,7 @@ describe('single node', () => {
       totalTimeMs: 1000,
       progressFraction: 1,
       state: 'finished',
-    } satisfies TreeTimerProgress);
+    } satisfies TimerNodeProgress);
   });
 
   const tree: TreeTimerNode = {
@@ -73,7 +73,7 @@ describe('tree', () => {
           state: 'not-started',
         },
       ],
-    } satisfies TreeTimerProgress);
+    } satisfies TimerNodeProgress);
   });
 
   test('600ms', () => {
@@ -102,7 +102,7 @@ describe('tree', () => {
           state: 'not-started',
         },
       ],
-    } satisfies TreeTimerProgress);
+    } satisfies TimerNodeProgress);
   });
 
   test('1200ms', () => {
@@ -132,7 +132,7 @@ describe('tree', () => {
           state: 'running',
         },
       ],
-    } satisfies TreeTimerProgress);
+    } satisfies TimerNodeProgress);
   });
 
   test('3500ms', () => {
@@ -183,7 +183,7 @@ describe('tree', () => {
                 : 'not-started',
         },
       ],
-    } satisfies TreeTimerProgress;
+    } satisfies TimerNodeProgress;
   }
 
   const tree: TreeTimerNode = {

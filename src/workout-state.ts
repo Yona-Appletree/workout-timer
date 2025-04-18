@@ -1,39 +1,86 @@
-export function WorkoutController(model: WorkoutModel) {}
+import { computeElapsedTime, TimerEvent } from './computeElapsedTime';
+import {
+  computeTreeTimerProgress,
+  TreeTimerNode,
+  TreeTimerProgress,
+} from './tree-timer';
 
-export interface WorkoutController {
-  model: WorkoutModel;
-  overallProgress: TimerProgress;
-  exercises: Array<{
-    progress: TimerProgress;
-    steps: Array<{
-      progress: TimerProgress;
-    }>;
-  }>;
-
-  get availableActions(): Array<{
-    label: string;
-    icon: string;
-    activate: () => void;
-  }>;
+export interface Exercise {
+  name: string;
+  id: string;
 }
 
-export interface WorkoutModel {
-  name: string;
-  restTime: number;
-  exercises: ExerciseModel[];
-  defaultExercise?: {
-    steps: ExerciseStepModel[];
-    restTime: number;
+export interface WorkoutState {
+  exercises: Exercise[];
+  exerciseTimeMs: number;
+  restTimeMs: number;
+  events: TimerEvent[];
+}
+
+export function buildWorkoutTree(
+  exercises: Exercise[],
+  exerciseTimeMs: number,
+  restTimeMs: number,
+): TreeTimerNode {
+  return {
+    id: 'workout',
+    type: 'branch',
+    children: exercises.flatMap((exercise, index) => [
+      // Left side of exercise
+      {
+        id: `${exercise.id}-left`,
+        type: 'leaf' as const,
+        durationMs: exerciseTimeMs,
+      },
+      // Right side of exercise
+      {
+        id: `${exercise.id}-right`,
+        type: 'leaf' as const,
+        durationMs: exerciseTimeMs,
+      },
+      // Rest period (except after last exercise)
+      ...(index < exercises.length - 1
+        ? [
+            {
+              id: `${exercise.id}-rest`,
+              type: 'leaf' as const,
+              durationMs: restTimeMs,
+            },
+          ]
+        : []),
+    ]),
   };
 }
 
-export interface ExerciseModel {
-  name: string;
-  steps?: ExerciseStepModel[];
-  restTime?: number;
+export function computeWorkoutProgress(
+  state: WorkoutState,
+  nowMs = Date.now(),
+): TreeTimerProgress {
+  const tree = buildWorkoutTree(
+    state.exercises,
+    state.exerciseTimeMs,
+    state.restTimeMs,
+  );
+  const elapsedTimeMs = computeElapsedTime(state.events, nowMs);
+  return computeTreeTimerProgress(tree, elapsedTimeMs);
 }
 
-export interface ExerciseStepModel {
-  name: string;
-  durationMs: number;
+export function createExercise(name: string): Exercise {
+  return {
+    name,
+    id: crypto.randomUUID(),
+  };
+}
+
+export function createWorkoutState(
+  exercises: Exercise[],
+  exerciseTimeMs: number,
+  restTimeMs: number,
+): WorkoutState {
+  return {
+    exercises,
+    exerciseTimeMs,
+    restTimeMs,
+    events: [],
+  };
 }
