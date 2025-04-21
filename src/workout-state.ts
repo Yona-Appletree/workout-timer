@@ -14,6 +14,7 @@ export interface WorkoutState {
   exercises: Exercise[];
   exerciseTimeMs: number;
   restTimeMs: number;
+  betweenSidesRestTimeMs: number;
   events: TimerEvent[];
 }
 
@@ -21,6 +22,7 @@ export function buildWorkoutTree(
   exercises: Exercise[],
   exerciseTimeMs: number,
   restTimeMs: number,
+  betweenSidesRestTimeMs: number,
 ): TreeTimerNode {
   return {
     id: 'workout',
@@ -31,6 +33,12 @@ export function buildWorkoutTree(
         id: `${exercise.id}-left`,
         type: 'leaf' as const,
         durationMs: exerciseTimeMs,
+      },
+      // Rest between sides
+      {
+        id: `${exercise.id}-between-sides`,
+        type: 'leaf' as const,
+        durationMs: betweenSidesRestTimeMs,
       },
       // Right side of exercise
       {
@@ -60,6 +68,7 @@ export function computeWorkoutProgress(
     state.exercises,
     state.exerciseTimeMs,
     state.restTimeMs,
+    state.betweenSidesRestTimeMs,
   );
   const elapsedTimeMs = computeElapsedTime(state.events, nowMs);
   return computeTreeTimerProgress(tree, elapsedTimeMs);
@@ -76,11 +85,13 @@ export function createWorkoutState(
   exercises: Exercise[],
   exerciseTimeMs: number,
   restTimeMs: number,
+  betweenSidesRestTimeMs: number = 0, // Default to 0 for backward compatibility
 ): WorkoutState {
   return {
     exercises,
     exerciseTimeMs,
     restTimeMs,
+    betweenSidesRestTimeMs,
     events: [],
   };
 }

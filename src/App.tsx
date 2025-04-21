@@ -27,18 +27,21 @@ const encodeState = (
   exercises: Exercise[],
   exerciseTimeMs: number,
   restTimeMs: number,
+  betweenSidesRestTimeMs: number,
 ) => {
-  // Format: exerciseTimeSec,restTimeSec|exercise1Name|exercise2Name|...
+  // Format: exerciseTimeSec,restTimeSec,betweenSidesRestTimeSec|exercise1Name|exercise2Name|...
   const exerciseNames = exercises
     .map((ex) => encodeURIComponent(ex.name))
     .join('|');
-  return `${Math.round(exerciseTimeMs / 1000)},${Math.round(restTimeMs / 1000)}|${exerciseNames}`;
+  return `${Math.round(exerciseTimeMs / 1000)},${Math.round(restTimeMs / 1000)},${Math.round(betweenSidesRestTimeMs / 1000)}|${exerciseNames}`;
 };
 
 const decodeState = (encoded: string) => {
   try {
     const [times, ...exerciseNames] = encoded.split('|');
-    const [exerciseTimeSec, restTimeSec] = times.split(',').map(Number);
+    const [exerciseTimeSec, restTimeSec, betweenSidesRestTimeSec = 0] = times
+      .split(',')
+      .map(Number);
 
     if (isNaN(exerciseTimeSec) || isNaN(restTimeSec)) {
       return null;
@@ -52,6 +55,7 @@ const decodeState = (encoded: string) => {
       exercises,
       exerciseTimeMs: exerciseTimeSec * 1000,
       restTimeMs: restTimeSec * 1000,
+      betweenSidesRestTimeMs: betweenSidesRestTimeSec * 1000,
     };
   } catch (error) {
     console.error('Failed to decode state:', error);
@@ -74,6 +78,7 @@ function App() {
           decoded.exercises,
           decoded.exerciseTimeMs,
           decoded.restTimeMs,
+          decoded.betweenSidesRestTimeMs,
         );
       }
     }
@@ -87,17 +92,21 @@ function App() {
           decoded.exercises,
           decoded.exerciseTimeMs,
           decoded.restTimeMs,
+          decoded.betweenSidesRestTimeMs,
         );
       }
     }
 
     // Default state
-    const defaultDecoded = decodeState('90,5|Hurdle|High%20leg%20lunge|Splits');
+    const defaultDecoded = decodeState(
+      '90,5,5|Hurdle|High%20leg%20lunge|Splits',
+    );
     if (defaultDecoded) {
       return createWorkoutState(
         defaultDecoded.exercises,
         defaultDecoded.exerciseTimeMs,
         defaultDecoded.restTimeMs,
+        defaultDecoded.betweenSidesRestTimeMs,
       );
     }
 
@@ -106,6 +115,7 @@ function App() {
       [createExercise('Exercise 1')],
       30 * 1000, // 30 seconds
       10 * 1000, // 10 seconds
+      5 * 1000, // 5 seconds
     );
   });
 
@@ -141,6 +151,7 @@ function App() {
       workoutState.exercises,
       workoutState.exerciseTimeMs,
       workoutState.restTimeMs,
+      workoutState.betweenSidesRestTimeMs,
     );
     // Update URL
     const newUrl = `${window.location.pathname}?state=${encoded}`;
@@ -151,6 +162,7 @@ function App() {
     workoutState.exercises,
     workoutState.exerciseTimeMs,
     workoutState.restTimeMs,
+    workoutState.betweenSidesRestTimeMs,
   ]);
 
   const addExercise = () => {
@@ -312,6 +324,24 @@ function App() {
               disabled={isStarted}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="betweenSidesRestTime">
+              Between Sides Rest (seconds)
+            </Label>
+            <Input
+              id="betweenSidesRestTime"
+              type="number"
+              value={workoutState.betweenSidesRestTimeMs / 1000}
+              onChange={(e) =>
+                setWorkoutState((prev) => ({
+                  ...prev,
+                  betweenSidesRestTimeMs: Number(e.target.value) * 1000,
+                }))
+              }
+              className="bg-white/5"
+              disabled={isStarted}
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -324,6 +354,9 @@ function App() {
             );
             const restProgress = progress.progressById.get(
               `${exercise.id}-rest`,
+            );
+            const betweenSidesProgress = progress.progressById.get(
+              `${exercise.id}-between-sides`,
             );
 
             return (
@@ -373,6 +406,17 @@ function App() {
                   </div>
                   <div className="space-y-1 w-full md:w-auto">
                     <ExerciseProgress label="Left" progress={leftProgress} />
+                    {workoutState.betweenSidesRestTimeMs > 0 && (
+                      <ExerciseProgress
+                        label="Switch Sides"
+                        progress={betweenSidesProgress}
+                        className={cn(
+                          'transition-opacity duration-200',
+                          betweenSidesProgress?.state === 'running' &&
+                            'bg-blue-500/10 rounded-lg p-1',
+                        )}
+                      />
+                    )}
                     <ExerciseProgress label="Right" progress={rightProgress} />
                   </div>
                 </div>
