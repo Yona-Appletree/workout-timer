@@ -25,7 +25,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+
+    // Types
+    "types": ["vite-plugin-remix-router/client"]
   },
   "include": ["src"]
 }
