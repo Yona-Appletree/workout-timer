@@ -30,5 +30,5 @@
     // Types
     "types": ["vite-plugin-remix-router/client"]
   },
-  "include": ["src"]
+  "include": ["src", ".storybook"]
 }

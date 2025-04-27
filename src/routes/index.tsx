@@ -272,7 +272,7 @@ export function Component() {
   return (
     <div
       className="
-      min-h-screen bg-gradient-to-br from-gray-900
+      min-h-screen bg-linear-to-br from-gray-900
       to-gray-800 text-white flex flex-col items-center justify-center p-4
     "
     >
@@ -363,7 +363,7 @@ export function Component() {
               <>
                 <div
                   className={cn(
-                    'flex flex-col md:grid md:grid-cols-[1fr,2fr] gap-4 items-center p-2',
+                    'flex flex-col md:grid md:grid-cols-[1fr_2fr] gap-4 items-center p-2',
                     (leftProgress?.state === 'running' ||
                       rightProgress?.state === 'running') &&
                       'bg-blue-500/10 rounded-lg',
