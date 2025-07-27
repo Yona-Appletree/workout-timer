@@ -36,7 +36,16 @@ const encodeState = (
   return `${Math.round(exerciseTimeMs / 1000)},${Math.round(restTimeMs / 1000)},${Math.round(betweenSidesRestTimeMs / 1000)}|${exerciseNames}`;
 };
 
-const decodeState = (encoded: string) => {
+interface WorkoutDefinition {
+  exercises: Exercise[];
+  restTimeMs: number;
+  betweenSidesRestTimeMs: number;
+  exerciseTimeMs: number;
+}
+
+const decodeState: (encoded: string) => null | WorkoutDefinition = (
+  encoded: string,
+) => {
   try {
     const [times, ...exerciseNames] = encoded.split('|');
     const [exerciseTimeSec, restTimeSec, betweenSidesRestTimeSec = 0] = times
